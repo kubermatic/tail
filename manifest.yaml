@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prow-bucket-reader
+data:
+  "service-account.json": <<base64encoded gcp service account file>>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: tail
+  name: tail
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tail
+  template:
+    metadata:
+      labels:
+        app: tail
+    spec:
+      containers:
+      - image: quay.io/kubermatic/tail:0.0.2
+        name: tail
+        command:
+        - /usr/local/bin/tail
+        - -cache-dir=/tmp
+        - -bucket-name=<<your prow bucket name>>
+        - -listen-port=:5000
+        env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/google/service-account.json
+        volumeMounts:
+        - name: google-application-credentials
+          mountPath: /etc/google
+      volumes:
+      - name: google-application-credentials
+        secret:
+          secretName: prow-bucket-reader
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: tail
+  name: tail
+spec:
+  ports:
+  - name: "5000"
+    port: 5000
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    app: tail
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/ingress.class: contour
+    kubernetes.io/tls-acme: "true"
+  generation: 4
+  name: tail-ingress
+spec:
+  rules:
+  - host: prow.mycompany.com
+    http:
+      paths:
+      - backend:
+          serviceName: tail
+          servicePort: 5000
+        path: /logs
+  tls:
+  - hosts:
+    - prow.mycompany.com
+    secretName: prow-tls
