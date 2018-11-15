@@ -14,7 +14,7 @@ import (
 	"cloud.google.com/go/storage"
 )
 
-var pathChecker = regexp.MustCompile("logs/[a-zA-Z_-]+/[0-9]+/[ a-zA-Z_-]+/[0-9]+")
+var pathChecker = regexp.MustCompile("logs/[a-zA-Z_-]+/[0-9]+/[ 0-9a-zA-Z_-]+/[0-9]+")
 
 type prowBucketHandler struct {
 	bucket *storage.BucketHandle
@@ -44,7 +44,7 @@ func (pbh *prowBucketHandler) router(resp http.ResponseWriter, r *http.Request) 
 func (pbh *prowBucketHandler) handleLogRequest(resp http.ResponseWriter, r *http.Request) {
 	log.Printf("Got request for %s", r.URL.Path)
 	if !pathChecker.MatchString(r.URL.Path) {
-		resp.WriteHeader(http.StatusNotFound)
+		resp.WriteHeader(http.StatusForbidden)
 		return
 	}
 
