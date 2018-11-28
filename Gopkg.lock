@@ -18,6 +18,27 @@
   version = "v0.31.0"
 
 [[projects]]
+  digest = "1:d9451dcb2363845263ea85fc292583872371b2fe1c5f8ae665920791d0006b6c"
+  name = "github.com/dghubble/gologin"
+  packages = [
+    ".",
+    "github",
+    "internal",
+    "oauth2",
+  ]
+  pruneopts = "UT"
+  revision = "b583eae78663394885200708baf607a22b74fadf"
+  version = "v2.1.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:c3d183ace8511d41d4f336cbcdf6e013f2fa1423ef43ac314cf3e45809bb0d64"
+  name = "github.com/dghubble/sessions"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "bc0b8928aad390b12ef2185181d9eb96154c157c"
+
+[[projects]]
   digest = "1:5d1b5a25486fc7d4e133646d834f6fca7ba1cef9903d40e7aa786c41b89e9e91"
   name = "github.com/golang/protobuf"
   packages = [
@@ -33,12 +54,36 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:f4f203acd8b11b8747bdcd91696a01dbc95ccb9e2ca2db6abf81c3a4f5e950ce"
+  name = "github.com/google/go-github"
+  packages = ["github"]
+  pruneopts = "UT"
+  revision = "f55b50f38167644bb7e4be03d9a2bde71d435239"
+  version = "v18.2.0"
+
+[[projects]]
+  digest = "1:a63cff6b5d8b95638bfe300385d93b2a6d9d687734b863da8e09dc834510a690"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  pruneopts = "UT"
+  revision = "44c6ddd0a2342c386950e880b658017258da92fc"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:e145e9710a10bc114a6d3e2738aadf8de146adaa031854ffdf7bbfe15da85e63"
   name = "github.com/googleapis/gax-go"
   packages = ["."]
   pruneopts = "UT"
   revision = "317e0006254c44a0ac427cc52a0e083ff0b9622f"
   version = "v2.0.0"
+
+[[projects]]
+  digest = "1:e72d1ebb8d395cf9f346fd9cbc652e5ae222dd85e0ac842dc57f175abed6d195"
+  name = "github.com/gorilla/securecookie"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e59506cc896acb7f7bf732d4fdf5e25f7ccd8983"
+  version = "v1.1.1"
 
 [[projects]]
   digest = "1:3b5a3bc35810830ded5e26ef9516e933083a2380d8e57371fdfde3c70d7c6952"
@@ -82,10 +127,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:faa25cb78cf9c8cec9345d4ed07322cdef6a8c968b3d0a6b6c3609067c7386eb"
+  digest = "1:5b60da2986b69207497d3c8f74c6ae307fe9e6bcb4b696edc6fd81ed8164be09"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
+    "github",
     "google",
     "internal",
     "jws",
@@ -214,6 +260,14 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = ["cloud.google.com/go/storage"]
+  input-imports = [
+    "cloud.google.com/go/storage",
+    "github.com/dghubble/gologin",
+    "github.com/dghubble/gologin/github",
+    "github.com/dghubble/sessions",
+    "github.com/google/go-github/github",
+    "golang.org/x/oauth2",
+    "golang.org/x/oauth2/github",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
