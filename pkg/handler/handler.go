@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -77,8 +78,13 @@ func (pbh *prowBucketHandler) router(resp http.ResponseWriter, req *http.Request
 	}
 
 	if !isAuthenticated(req) {
-		page, _ := ioutil.ReadFile("pkg/handler/login.html")
-		fmt.Fprintf(resp, string(page))
+		tmpl, err := template.ParseFiles("pkg/handler/login.html")
+		if err != nil {
+			log.Print(err)
+		}
+		if err := tmpl.Execute(resp, pbh.org); err != nil {
+			log.Print(err)
+		}
 	}
 }
 
@@ -106,8 +112,13 @@ func (pbh *prowBucketHandler) handleLogRequest(resp http.ResponseWriter, req *ht
 	}
 
 	if !contains(pbh.publicRepos, repo) && !isAuthenticated(req) {
-		page, _ := ioutil.ReadFile("pkg/handler/login.html")
-		fmt.Fprintf(resp, string(page))
+		tmpl, err := template.ParseFiles("pkg/handler/login.html")
+		if err != nil {
+			log.Print(err)
+		}
+		if err := tmpl.Execute(resp, pbh.org); err != nil {
+			log.Print(err)
+		}
 		return
 	}
 
@@ -132,12 +143,12 @@ func (pbh *prowBucketHandler) issueSession() http.Handler {
 		}
 
 		if !isMember {
-			_, err := fmt.Fprintf(resp, `Hey, %s`, username)
+			_, err := fmt.Fprintf(resp, `<p>Hey, %s</p>`, username)
 			if err != nil {
 				http.Error(resp, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			fmt.Fprintf(resp, `Only members of the %s organisation are allowed to view this page. Looks like you are not a member. :(`, pbh.org)
+			fmt.Fprintf(resp, `<p>Only members of the %s organisation are allowed to view this page. Looks like you are not a member. :(</p>`, pbh.org)
 			return
 		}
 
