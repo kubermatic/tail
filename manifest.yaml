@@ -22,14 +22,37 @@ spec:
         app: tail
     spec:
       containers:
-      - image: quay.io/kubermatic/tail:0.0.2
+      - image: quay.io/kubermatic/tail:0.0.3
         name: tail
         command:
         - /usr/local/bin/tail
         - -cache-dir=/tmp
         - -bucket-name=<<your prow bucket name>>
         - -listen-port=:5000
+        - -redirect-url=<<your redirect url>>
+        - -public-repos="orgName/repo1,orgName/repo2"
+        - -org="orgName"
         env:
+        - name: CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: oauth-token
+              key: clientID
+        - name: CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oauth-token
+              key: clientSecret
+        - name: TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: read-only-token
+              key: token
+        - name: SESSION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: session-key
+              key: key
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /etc/google/service-account.json
         volumeMounts:
