@@ -22,7 +22,7 @@ spec:
         app: tail
     spec:
       containers:
-      - image: quay.io/kubermatic/tail:0.0.3
+      - image: quay.io/kubermatic/tail:0.0.4
         name: tail
         command:
         - /usr/local/bin/tail
