@@ -78,7 +78,7 @@ func (pbh *prowBucketHandler) router(resp http.ResponseWriter, req *http.Request
 	}
 
 	if !isAuthenticated(req) {
-		tmpl, err := template.ParseFiles("pkg/handler/login.html")
+		tmpl, err := template.ParseFiles("/var/tmp/login.html")
 		if err != nil {
 			log.Print(err)
 		}
@@ -112,7 +112,8 @@ func (pbh *prowBucketHandler) handleLogRequest(resp http.ResponseWriter, req *ht
 	}
 
 	if !contains(pbh.publicRepos, repo) && !isAuthenticated(req) {
-		tmpl, err := template.ParseFiles("pkg/handler/login.html")
+		log.Printf("%s is not in the list of public repos %v", repo, pbh.publicRepos)
+		tmpl, err := template.ParseFiles("/var/tmp/login.html")
 		if err != nil {
 			log.Print(err)
 		}
