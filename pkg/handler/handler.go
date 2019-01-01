@@ -22,7 +22,7 @@ import (
 	githubOAuth2 "golang.org/x/oauth2/github"
 )
 
-var pathChecker = regexp.MustCompile("build/[a-zA-Z_-]+/[0-9]+/[ 0-9a-zA-Z_-]+/[0-9]+")
+var pathChecker = regexp.MustCompile("build/[a-zA-Z_-]+/[0-9]+/[\\. 0-9a-zA-Z_-]+/[0-9]+")
 var repoName = regexp.MustCompile("/build/[a-zA-Z_-]+")
 
 const (
