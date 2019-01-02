@@ -22,8 +22,8 @@ import (
 	githubOAuth2 "golang.org/x/oauth2/github"
 )
 
-var pathChecker = regexp.MustCompile("logs/[a-zA-Z_-]+/[0-9]+/[ 0-9a-zA-Z_-]+/[0-9]+")
-var repoName = regexp.MustCompile("/logs/[a-zA-Z_-]+")
+var pathChecker = regexp.MustCompile("build/[a-zA-Z_-]+/[0-9]+/[\\. 0-9a-zA-Z_-]+/[0-9]+")
+var repoName = regexp.MustCompile("/build/[a-zA-Z_-]+")
 
 const (
 	sessionName    = "prow"
@@ -67,7 +67,7 @@ func New(b *storage.BucketHandle, cacheDir, listenAddress, clientID, clientSecre
 }
 
 func (pbh *prowBucketHandler) router(resp http.ResponseWriter, req *http.Request) {
-	if strings.HasPrefix(req.URL.String(), "/logs") {
+	if strings.HasPrefix(req.URL.String(), "/build") {
 		pbh.handleLogRequest(resp, req)
 		return
 	}
@@ -107,7 +107,7 @@ func (pbh *prowBucketHandler) handleLogRequest(resp http.ResponseWriter, req *ht
 	match := repoName.FindStringSubmatch(req.URL.Path)
 	var repo string
 	if match != nil && len(match) == 1 {
-		repo = match[0] // will be a string of the form /logs/org_repo
+		repo = match[0] // will be a string of the form /build/org_repo
 		repo = strings.Replace(repo[6:], "_", "/", -1)
 	}
 
@@ -163,7 +163,7 @@ func (pbh *prowBucketHandler) issueSession() http.Handler {
 
 // showLogs displays the logs from the specified bucket.
 func (pbh *prowBucketHandler) showLogs(resp http.ResponseWriter, req *http.Request) {
-	bucketPath := strings.Replace(req.URL.Path, "/logs", "pr-logs/pull", 1)
+	bucketPath := strings.Replace(req.URL.Path, "/build", "pr-logs/pull", 1)
 	bucketPath = bucketPath + "/build-log.txt"
 	cachePath := path.Join(pbh.tmpDir, strings.Replace(bucketPath, "/", "_", -1))
 	cachePath = strings.Replace(cachePath, " ", "_", -1)
