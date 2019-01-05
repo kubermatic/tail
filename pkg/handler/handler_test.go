@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 )
 
@@ -10,21 +12,25 @@ func TestPathCheckerRegex(t *testing.T) {
 		allowed bool
 	}{
 		{
-			path:    "build/my_repo/2548/pull-with_underscore_and./1079687257834655744",
+			path:    "build/bucket/pr-logs/pull/org_repo/2548/pull-with_underscore_and./1079687257834655744",
 			allowed: true,
 		},
 		{
-			path:    "wrong-prefix/my_repo/2548/pull-with_underscore_and./1079687257834655744",
+			path:    "wrong-prefix/bucket/pr-logs/pull/org_repo/2548/pull-with_underscore_and./1079687257834655744",
 			allowed: false,
 		},
 		{
-			path:    "build/my_repo/2548/pull-without-id",
+			path:    "build/bucket/pr-logs/pull/org_repo/2548/pull-without-id",
 			allowed: false,
 		},
 		{
-			path:    "build/my_repo/no-pr-number/pull-with_underscore_and./1079687257834655744",
+			path:    "build/my-repo/pr-logs/pull/org_repo/no-pr-number/pull-with_underscore_and./1079687257834655744",
 			allowed: false,
 		},
+	}
+	pathChecker, err := regexp.Compile(fmt.Sprintf(pathCheckerRegexpTemplate, "bucket"))
+	if err != nil {
+		t.Fatalf("failed to compile regexp: %v", err)
 	}
 
 	for _, test := range tests {
