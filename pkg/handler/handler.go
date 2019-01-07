@@ -196,6 +196,25 @@ func (pbh *prowBucketHandler) showLogs(resp http.ResponseWriter, req *http.Reque
 		obj := pbh.bucket.Object(bucketPath)
 		reader, err := obj.NewReader(context.Background())
 		if err != nil {
+			if err == storage.ErrObjectNotExist {
+				// Be optimistic and assume:
+				// * The object wasnt found because the build is still running
+				// * Deck runs on the same base url as tail
+				slashSplitURL := strings.Split(req.URL.String(), "/")
+				// Should never happen but still check
+				if len(slashSplitURL) < 2 {
+					resp.WriteHeader(http.StatusInternalServerError)
+					log.Printf("Failed to get obj reader for %s with len(slashSplitURL) < 2: %v", bucketPath, err)
+					return
+				}
+				jobName := slashSplitURL[len(slashSplitURL)-2]
+				buildID := slashSplitURL[len(slashSplitURL)-1]
+				// Req.URL contains neither a scheme nor a host, we can get the host from req
+				// directly but not the scheme - We assume it always is https
+				redirectURL := fmt.Sprintf("https://%s/log?job=%s&id=%s", req.Host, jobName, buildID)
+				http.Redirect(resp, req, redirectURL, http.StatusTemporaryRedirect)
+				return
+			}
 			resp.WriteHeader(http.StatusInternalServerError)
 			log.Printf("Failed to get obj reader for %s: %v", bucketPath, err)
 			return
