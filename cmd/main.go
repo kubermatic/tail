@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"cloud.google.com/go/storage"
 	gogithub "github.com/google/go-github/github"
 	"github.com/kubermatic/tail/pkg/handler"
 	"golang.org/x/oauth2"
@@ -36,19 +35,16 @@ func main() {
 	token := os.Getenv("TOKEN")
 
 	ctx := context.Background()
-	client, err := storage.NewClient(ctx)
-	if err != nil {
-		log.Fatalf("Failed to create storage client: %v", err)
-	}
-	bkt := client.Bucket(bucketName)
-
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	githubclient := gogithub.NewClient(tc)
 
-	server := handler.New(bkt, cacheDir, listenPort, clientID, clientSecret, redirectURL, org, strings.Split(publicRepos, ","), githubclient)
+	server, err := handler.New(bucketName, cacheDir, listenPort, clientID, clientSecret, redirectURL, org, strings.Split(publicRepos, ","), githubclient)
+	if err != nil {
+		log.Fatalf("failed to create server: %v", err)
+	}
 
 	log.Printf("Starting to listen on %s", listenPort)
 	if err := server.ListenAndServe(); err != nil {

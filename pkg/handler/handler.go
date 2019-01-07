@@ -22,12 +22,16 @@ import (
 	githubOAuth2 "golang.org/x/oauth2/github"
 )
 
-var pathChecker = regexp.MustCompile("build/[a-zA-Z_-]+/[0-9]+/[\\. 0-9a-zA-Z_-]+/[0-9]+")
-var repoName = regexp.MustCompile("/build/[a-zA-Z_-]+")
+var repoName = regexp.MustCompile("/pull/[a-zA-Z_-]+")
 
 const (
-	sessionName    = "prow"
-	sessionUserKey = "username"
+	// The "build/<<bucket-name>>/pr-logs/pull" prefix is required in order for Spyglass to be able
+	// to render correct links:
+	// * https://github.com/kubernetes/test-infra/blob/5475440d76f9039f7e1a5fa86c2f85ea8414b093/prow/cmd/deck/static/prow/prow.ts#L536
+	// * https://github.com/kubernetes/test-infra/blob/5475440d76f9039f7e1a5fa86c2f85ea8414b093/prow/cmd/deck/main.go#L508
+	pathCheckerRegexpTemplate = "build/%s/pr-logs/pull/[a-zA-Z_-]+/[0-9]+/[\\. 0-9a-zA-Z_-]+/[0-9]+"
+	sessionName               = "prow"
+	sessionUserKey            = "username"
 )
 
 // sessionStore encodes and decodes session data stored in signed cookies
@@ -35,14 +39,26 @@ var sessionStore = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")), nil
 
 type prowBucketHandler struct {
 	bucket       *storage.BucketHandle
+	bucketName   string
 	tmpDir       string
 	publicRepos  []string
 	org          string
 	githubClient *gogithub.Client
+	pathChecker  *regexp.Regexp
 }
 
-func New(b *storage.BucketHandle, cacheDir, listenAddress, clientID, clientSecret, redirectURL, org string, publicRepos []string, githubClient *gogithub.Client) *http.Server {
-	bucketHandler := &prowBucketHandler{bucket: b, tmpDir: cacheDir, publicRepos: publicRepos, org: org, githubClient: githubClient}
+func New(bucketName string, cacheDir, listenAddress, clientID, clientSecret, redirectURL, org string, publicRepos []string, githubClient *gogithub.Client) (*http.Server, error) {
+	ctx := context.Background()
+	storageClient, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create storage client: %v", err)
+	}
+	bkt := storageClient.Bucket(bucketName)
+	pathChecker, err := regexp.Compile(fmt.Sprintf(pathCheckerRegexpTemplate, bucketName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to compile pathchecker regexp: %v", err)
+	}
+	bucketHandler := &prowBucketHandler{bucket: bkt, bucketName: bucketName, tmpDir: cacheDir, publicRepos: publicRepos, org: org, githubClient: githubClient, pathChecker: pathChecker}
 
 	mux := &http.ServeMux{}
 	mux.HandleFunc("/", bucketHandler.router)
@@ -63,7 +79,7 @@ func New(b *storage.BucketHandle, cacheDir, listenAddress, clientID, clientSecre
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
-	}
+	}, nil
 }
 
 func (pbh *prowBucketHandler) router(resp http.ResponseWriter, req *http.Request) {
@@ -98,7 +114,7 @@ func logoutHandler(w http.ResponseWriter, req *http.Request) {
 
 func (pbh *prowBucketHandler) handleLogRequest(resp http.ResponseWriter, req *http.Request) {
 	log.Printf("Got request for %s", req.URL.Path)
-	if !pathChecker.MatchString(req.URL.Path) {
+	if !pbh.pathChecker.MatchString(req.URL.Path) {
 		resp.WriteHeader(http.StatusForbidden)
 		return
 	}
@@ -107,8 +123,10 @@ func (pbh *prowBucketHandler) handleLogRequest(resp http.ResponseWriter, req *ht
 	match := repoName.FindStringSubmatch(req.URL.Path)
 	var repo string
 	if match != nil && len(match) == 1 {
-		repo = match[0] // will be a string of the form /build/org_repo
-		repo = strings.Replace(repo[6:], "_", "/", -1)
+		repo = match[0] // will be a string of the form /pull/org_repo
+		repo = strings.Replace(repo, "/pull/", "", -1)
+		// Lets hope we never have a repo or org with an underscore in its name...
+		repo = strings.Replace(repo, "_", "/", -1)
 	}
 
 	if !contains(pbh.publicRepos, repo) && !isAuthenticated(req) {
@@ -163,7 +181,7 @@ func (pbh *prowBucketHandler) issueSession() http.Handler {
 
 // showLogs displays the logs from the specified bucket.
 func (pbh *prowBucketHandler) showLogs(resp http.ResponseWriter, req *http.Request) {
-	bucketPath := strings.Replace(req.URL.Path, "/build", "pr-logs/pull", 1)
+	bucketPath := strings.Replace(req.URL.Path, fmt.Sprintf("/build/%s/", pbh.bucketName), "", -1)
 	bucketPath = bucketPath + "/build-log.txt"
 	cachePath := path.Join(pbh.tmpDir, strings.Replace(bucketPath, "/", "_", -1))
 	cachePath = strings.Replace(cachePath, " ", "_", -1)
