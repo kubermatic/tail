@@ -29,7 +29,7 @@ const (
 	// to render correct links:
 	// * https://github.com/kubernetes/test-infra/blob/5475440d76f9039f7e1a5fa86c2f85ea8414b093/prow/cmd/deck/static/prow/prow.ts#L536
 	// * https://github.com/kubernetes/test-infra/blob/5475440d76f9039f7e1a5fa86c2f85ea8414b093/prow/cmd/deck/main.go#L508
-	pathCheckerRegexpTemplate = "build/%s/pr-logs/pull/[a-zA-Z_-]+/[0-9]+/[\\. 0-9a-zA-Z_-]+/[0-9]+"
+	pathCheckerRegexpTemplate = "build/%s/pr-logs/pull/[a-zA-Z_0-9-]+/[0-9]+/[\\. 0-9a-zA-Z_-]+/[0-9]+"
 	sessionName               = "prow"
 	sessionUserKey            = "username"
 )
